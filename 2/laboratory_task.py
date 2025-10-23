@@ -87,21 +87,17 @@ class Timetable:
 
         print(f"Всего требуется занятий: {len(all_lessons)}")
 
-        # Сортируем занятия по сложности размещения (приоритет редким комбинациям)
         def get_lesson_priority(lesson):
             teacher, subject_id, group = lesson
-            # Считаем, сколько преподавателей могут вести этот предмет
             teacher_options = len([t for t in self.teachers.values() if t.can_teach(subject_id)])
-            # Считаем, сколько групп нуждаются в этом предмете
             group_options = len([g for g in self.groups.values() if g.needs_subject(subject_id)])
-            return teacher_options + group_options  # чем меньше, тем выше приоритет
+            return teacher_options + group_options
 
         all_lessons.sort(key=get_lesson_priority)
 
         success_count = 0
         for teacher, subject_id, group in all_lessons:
             placed = False
-            # Пробуем разместить занятие
             for time_slot in range(1, self.classes_count + 1):
                 for classroom in self.classrooms:
                     if self.is_slot_free(teacher, group, classroom, time_slot):
@@ -124,7 +120,6 @@ class Timetable:
         return success_count == len(all_lessons)
 
     def print_timetable(self):
-    # Создаём таблицу: строки — пары, столбцы — аудитории
         table = [[None for _ in self.classrooms] for _ in range(self.classes_count)]
 
         for lesson in self.timetable:
@@ -132,8 +127,7 @@ class Timetable:
             col = lesson.classroom.id - 1
             table[row][col] = lesson
 
-    # Собираем все возможные тексты для расчёта ширины ячейки
-        all_texts = ["---"]  # базовое значение для пустых ячеек
+        all_texts = ["---"]
         for lesson in self.timetable:
             text = f"Teacher{lesson.teacher.id} | Group{lesson.group.id} | Subject{lesson.subject_id}"
             all_texts.append(text)
@@ -150,14 +144,12 @@ class Timetable:
         print(f"{'РАСПИСАНИЕ НА ДЕНЬ':^{total_width}}")
         print("=" * total_width)
 
-        # Заголовок
         header = f"{'Пара \\ Аудитория':<{left_col_width}} |"
         for room in self.classrooms:
             header += f" {'Ауд ' + str(room.id):^{cell_width}} |"
         print(header)
         print("-" * total_width)
 
-        # Строки расписания
         for time_slot in range(self.classes_count):
             row_label = f"{time_slot + 1} пара"
             row_str = f"{row_label:>{left_col_width}} |"
@@ -195,3 +187,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
