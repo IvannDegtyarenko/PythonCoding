@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import os
 
 class Teacher:
     def __init__(self, id, subject_ids):
@@ -123,52 +124,61 @@ class Timetable:
         return success_count == len(all_lessons)
 
     def print_timetable(self):
-        if not self.timetable:
-            print("Расписание пустое!")
-            return
-
-        table = []
-        for i in range(self.classes_count):
-            row = []
-            for j in range(len(self.classrooms)):
-                row.append(None)
-            table.append(row)
+    # Создаём таблицу: строки — пары, столбцы — аудитории
+        table = [[None for _ in self.classrooms] for _ in range(self.classes_count)]
 
         for lesson in self.timetable:
-            row = lesson.time_slot - 1  # пары с 1, индексы с 0
-            col = lesson.classroom.id - 1  # аудитории с 1, индексы с 0
+            row = lesson.time_slot - 1
+            col = lesson.classroom.id - 1
             table[row][col] = lesson
 
-        print("\n" + "=" * 90)
-        print("РАСПИСАНИЕ НА ДЕНЬ")
-        print("=" * 90)
-
-        header = "Пара \\ Аудитория |"
+    # Собираем все возможные тексты для расчёта ширины ячейки
+        all_texts = ["---"]  # базовое значение для пустых ячеек
+        for lesson in self.timetable:
+            text = f"Teacher{lesson.teacher.id} | Group{lesson.group.id} | Subject{lesson.subject_id}"
+            all_texts.append(text)
         for room in self.classrooms:
-            header += f"    Ауд {room.id}     |"
-        print(header)
-        print("-" * len(header))
+            all_texts.append(f"Ауд {room.id}")
 
+        min_cell_width = 20
+        cell_width = max(min_cell_width, max(len(text) for text in all_texts) + 2)
+
+        left_col_width = 18
+        total_width = left_col_width + len(self.classrooms) * (cell_width + 3) + 1
+
+        print("\n" + "=" * total_width)
+        print(f"{'РАСПИСАНИЕ НА ДЕНЬ':^{total_width}}")
+        print("=" * total_width)
+
+        # Заголовок
+        header = f"{'Пара \\ Аудитория':<{left_col_width}} |"
+        for room in self.classrooms:
+            header += f" {'Ауд ' + str(room.id):^{cell_width}} |"
+        print(header)
+        print("-" * total_width)
+
+        # Строки расписания
         for time_slot in range(self.classes_count):
-            row_str = f"     {time_slot + 1} пара      |"
+            row_label = f"{time_slot + 1} пара"
+            row_str = f"{row_label:>{left_col_width}} |"
             for room in self.classrooms:
                 lesson = table[time_slot][room.id - 1]
                 if lesson:
-                    cell = f"T{lesson.teacher.id}-G{lesson.group.id}-S{lesson.subject_id}"
-                    row_str += f" {cell:^14} |"
+                    cell_text = f"Teacher{lesson.teacher.id} | Group{lesson.group.id} | Subject{lesson.subject_id}"
                 else:
-                    row_str += f" {'---':^14} |"
+                    cell_text = "---"
+                row_str += f" {cell_text:^{cell_width}} |"
             print(row_str)
 
-        print("=" * 90)
+        print("=" * total_width)
 
 
 def main():
     print("ПОСТРОЕНИЕ РАСПИСАНИЯ")
     print("=" * 50)
 
-    path = Path("time_table.json")
-    path = path.absolute()
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(script_dir, "time_table.json")
     print(path)
 
     timetable = Timetable(path)
